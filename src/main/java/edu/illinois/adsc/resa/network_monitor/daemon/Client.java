@@ -68,6 +68,7 @@ public class Client {
     private void perform() throws TException, InterruptedException {
         while(true) {
             Thread.sleep(1000);
+            System.out.println("====================");
             for(Connection c: connections) {
                 double rate = c.client.getThroughput();
                 String nodeName = c.nodeName;
