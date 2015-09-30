@@ -55,6 +55,11 @@
           <scope>runtime</scope>
           <version>1.2.16</version>
       </dependency>
+      <dependency>
+          <groupId>args4j</groupId>
+          <version>2.0.16</version>
+          <artifactId>args4j</artifactId>
+      </dependency>
   </dependencies>
   <build>
       <plugins>
