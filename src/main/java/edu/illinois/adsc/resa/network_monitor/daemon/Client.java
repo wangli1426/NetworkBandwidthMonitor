@@ -15,7 +15,7 @@ public class Client {
         try {
             TTransport transport;
 
-            transport = new TSocket("localhost", 9090);
+            transport = new TSocket("127.0.0.1", 9090);
             transport.open();
 
             TProtocol protocol = new TBinaryProtocol(transport);
