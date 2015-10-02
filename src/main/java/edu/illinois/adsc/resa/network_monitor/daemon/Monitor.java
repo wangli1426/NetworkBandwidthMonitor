@@ -1,11 +1,9 @@
 package edu.illinois.adsc.resa.network_monitor.daemon;
 
-import edu.illinois.adsc.resa.network_monitor.INetworkThroughputReader;
-import edu.illinois.adsc.resa.network_monitor.LinuxNetworkThroughputReader;
+import edu.illinois.adsc.resa.network_monitor.LinuxNetworkReader;
+import edu.illinois.adsc.resa.network_monitor.interfaces.INetworkThroughputReader;
 import edu.illinois.adsc.resa.network_monitor.generated.NetworkMonitor;
 import org.apache.thrift.server.TServer;
-import org.apache.thrift.server.TServer.Args;
-import org.apache.thrift.server.TSimpleServer;
 import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
@@ -22,7 +20,7 @@ public class Monitor {
     public static void main(String[] args) {
 
         try {
-            reader = new LinuxNetworkThroughputReader();
+            reader = new LinuxNetworkReader();
             processor = new NetworkMonitor.Processor(reader);
 
             TServerTransport serverTransport = new TServerSocket(9090);

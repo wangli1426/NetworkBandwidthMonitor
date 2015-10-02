@@ -1,7 +1,8 @@
 package edu.illinois.adsc.resa.network_monitor;
 
 
-import edu.illinois.adsc.resa.network_monitor.generated.NetworkMonitor;
+import edu.illinois.adsc.resa.network_monitor.interfaces.ICpuUtilizationReader;
+import edu.illinois.adsc.resa.network_monitor.interfaces.INetworkThroughputReader;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,7 +15,7 @@ import java.util.regex.Pattern;
 /**
  * Created by robert on 9/29/15.
  */
-public class LinuxNetworkThroughputReader implements INetworkThroughputReader {
+public class LinuxNetworkReader implements INetworkThroughputReader, ICpuUtilizationReader {
 
     private long recBytes = 0;
     private long sendBytes = 0;
@@ -22,11 +23,13 @@ public class LinuxNetworkThroughputReader implements INetworkThroughputReader {
     private float recRate = 0;
     private float sendRate = 0;
 
+    private float cpuUtilization = 0;
+
     private float period = 1000;
 
     private Thread thread;
 
-    public LinuxNetworkThroughputReader() throws IOException {
+    public LinuxNetworkReader() throws IOException {
         initialize();
         thread = new Thread(new Fresher());
         thread.start();
@@ -37,11 +40,6 @@ public class LinuxNetworkThroughputReader implements INetworkThroughputReader {
     }
 
     public double getThroughput() {
-        return getInstantaneousThroughput();
-    }
-
-    @Override
-    public float getInstantaneousThroughput() {
         return recRate + sendRate;
     }
 
@@ -51,7 +49,11 @@ public class LinuxNetworkThroughputReader implements INetworkThroughputReader {
         sendRate = 0;
     }
 
-    private void updateValues() throws IOException{
+    private void updateValues() throws IOException {
+        updateNetWokrValues();
+        updateCPUValues();
+    }
+    private void updateNetWokrValues() throws IOException{
         ProcessBuilder builder = new ProcessBuilder();
         String defaultEthnetName = "eth0";
         String command = "ifconfig";
@@ -87,14 +89,61 @@ public class LinuxNetworkThroughputReader implements INetworkThroughputReader {
         process.destroy();
     }
 
+    private void updateCPUValues() throws IOException{
+        ProcessBuilder builder = new ProcessBuilder();
+
+        String[] command = {"top","-n", "2", "-b", "-d", "0.5"};//"-n 2 -b -d 1|grep Cpu";
+        builder.command(command);
+        builder.redirectErrorStream(true);
+        Process process = builder.start();
+        BufferedReader r = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line;
+        r.readLine();
+        r.readLine();
+        r.readLine();
+        r.readLine();
+        r.readLine();
+        while (true) {
+            line = r.readLine();
+            if(line == null) break;
+
+            String head = line.substring(0,Math.min(8,line.length()));
+
+            if(!head.equals("%Cpu(s):"))
+                continue;
+
+            Pattern p = Pattern.compile( "([0-9|.]+) us" );
+            Matcher m = p.matcher(line);
+
+            if ( m.find() ) {
+                try{
+                    cpuUtilization = Float.parseFloat(m.group(1));
+                }
+                catch (Exception e){
+                    System.out.println("Some bad happens! Reason: ");
+                    e.printStackTrace();
+                }
+                break;
+            }
+        }
+        r.close();
+        process.destroy();
+    }
+
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        LinuxNetworkThroughputReader throughputReader = new LinuxNetworkThroughputReader();
+        LinuxNetworkReader throughputReader = new LinuxNetworkReader();
         while(true) {
             Thread.sleep(1000);
-            System.out.println("Network bandwidth: "+throughputReader.getInstantaneousThroughput());
+            System.out.println("Network bandwidth: " + throughputReader.getThroughput());
+            System.out.println("CPU utilization:" + throughputReader.getCpuUtilization());
         }
 
+    }
+
+    @Override
+    public double getCpuUtilization() {
+        return cpuUtilization;
     }
 
     public class Fresher implements Runnable {

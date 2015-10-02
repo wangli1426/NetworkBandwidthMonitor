@@ -70,9 +70,10 @@ public class Client {
             Thread.sleep(1000);
             System.out.println("====================");
             for(Connection c: connections) {
-                double rate = c.client.getThroughput();
+                double network = c.client.getThroughput();
+                double cpu = c.client.getCpuUtilization();
                 String nodeName = c.nodeName;
-                System.out.format("%.20s\t%6.4f MBytes/s\n",nodeName.substring(0,Math.min(20,nodeName.length())),rate);
+                System.out.format("%.20s\t%6.4f MBytes/s\t%2.2f\n",nodeName.substring(0,Math.min(20,nodeName.length())), network, cpu );
             }
         }
     }
